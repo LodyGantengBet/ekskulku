@@ -87,13 +87,21 @@ async function handleDaftar(formData: FormData) {
     );
   }
 
-  // Validasi jadwal bentrok (hari dan sesi sama)
+  // Ambil semua ekskul yang sudah diikuti oleh murid ini sebelumnya
   const ekskulDiikutiMurid = pendaftar.filter(
     (p: Pendaftar) =>
       p.nama.toLowerCase() === nama.toLowerCase() &&
       p.kelas.toLowerCase() === kelas.toLowerCase(),
   );
 
+  // === FITUR BONUS: Validasi Maksimal 2 Ekskul ===
+  if (ekskulDiikutiMurid.length >= 2) {
+    redirect(
+      `/ekskul/${ekskulId}?error=${encodeURIComponent(`Pendaftaran ditolak. ${nama} (${kelas}) sudah mengikuti maksimal 2 ekstrakurikuler.`)}&nama=${encodeURIComponent(nama)}&kelas=${encodeURIComponent(kelas)}`,
+    );
+  }
+
+  // Validasi jadwal bentrok (hari dan sesi sama)
   for (const p of ekskulDiikutiMurid) {
     const eLain = ekskul.find((e: Ekskul) => e.id === p.ekskulId);
     if (

@@ -15,25 +15,36 @@ export const metadata: Metadata = {
 export default async function BerandaEkskul({
   searchParams,
 }: {
-  searchParams: Promise<{ kategori?: string; hari?: string }>;
+  searchParams: Promise<{ kategori?: string; hari?: string; sisa?: string }>;
 }) {
   const resolvedSearchParams = await searchParams;
   const selectedKategori = resolvedSearchParams.kategori || "Semua kategori";
   const selectedHari = resolvedSearchParams.hari || "Semua hari";
+  const selectedSisa = resolvedSearchParams.sisa === "1"; // Cek apakah filter sisa=1 aktif
 
   const semuaEkskul = await ambilSemuaEkskul();
 
   // Penyaringan (Filtering) di server berdasarkan parameter URL
   const filteredEkskul = semuaEkskul.filter((item) => {
+    const jumlahPendaftar = pendaftar.filter(
+      (p) => p.ekskulId === item.id,
+    ).length;
+    const sisaTempat = item.kuota - jumlahPendaftar;
+
     const matchKategori =
       selectedKategori === "Semua kategori" || !selectedKategori
         ? true
         : item.kategori === selectedKategori;
+
     const matchHari =
       selectedHari === "Semua hari" || !selectedHari
         ? true
         : item.hari === selectedHari;
-    return matchKategori && matchHari;
+
+    // Filter bonus: Jika sisa=1, pastikan sisa tempat > 0
+    const matchSisa = selectedSisa ? sisaTempat > 0 : true;
+
+    return matchKategori && matchHari && matchSisa;
   });
 
   return (
@@ -81,6 +92,26 @@ export default async function BerandaEkskul({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Opsi Bonus: Checkbox Sisa Tempat */}
+          <div className="md:col-span-2 flex items-center gap-2 bg-slate-800/50 border border-slate-700/50 px-4 py-3 rounded-lg">
+            <input
+              type="checkbox"
+              name="sisa"
+              value="1"
+              defaultChecked={selectedSisa}
+              id="sisa-checkbox"
+              className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500"
+            />
+            <label
+              htmlFor="sisa-checkbox"
+              className="text-sm text-slate-300 cursor-pointer"
+            >
+              Hanya tampilkan ekskul yang masih ada tempat (belum penuh)
+              $\rightarrow$ set URL ke{" "}
+              <code className="text-blue-400 font-mono">?sisa=1</code>
+            </label>
           </div>
 
           <div className="md:col-span-2 flex gap-2">
